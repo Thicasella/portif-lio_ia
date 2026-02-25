@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
+from unidecode import unidecode
 
 app = FastAPI()
 
@@ -9,12 +10,11 @@ class Pergunta(BaseModel):
 
 perfil = {
     "anos_carreira_dados": 5,
-    "empresa": "Sulamerica",
-    "Ex-empresa": "Terceiro no banco santander, onde trabalhei no time de recuperação de crédito",
-    "trajetória": "Iniciei minha carreira como Estágiario na empresa Pagbank Pagseguros, onde fiquei 2 anos como estágiario, pós pagbank entrei como terceiro no banco santander no time de recupeção de crédito. acabei rebendo uma boa propósta da sulamérica pós alguns meses dentro do santander e decidi por ser terceiro dar esse passo de entra em uma das maiores seguradoras do país",
+    "empresa_atual": "Sulamérica",
+    "ex_empresa": "Terceiro no Banco Santander - Time de Recuperação de Crédito",
+    "trajetoria": "Iniciei minha carreira como Estagiário no PagBank PagSeguro, onde fiquei 2 anos. Após isso, entrei como terceiro no Banco Santander no time de recuperação de crédito. Recebi uma proposta estratégica da SulAmérica e decidi dar o próximo passo entrando em uma das maiores seguradoras do país.",
     "cargo": "Analista de Dados Pleno",
     "especialidades": "Power BI, SQL, Python, PySpark",
-    "mba": "Tecnologia para Negócios: AI, Data Science e Big Data",
     "projeto_destaque": "Automação de DRE Financeira integrando Power Query com banco de dados",
     "area_atual": "Análise de sinistros e dados estratégicos"
 }
@@ -23,155 +23,278 @@ perfil = {
 def home():
     return """
     <html>
-        <head>
-            <title>Thiago AI Terminal</title>
-            <style>
-                body {
-                    background-color: black;
-                    color: #00ff00;
-                    font-family: monospace;
-                    padding: 40px;
-                }
-                input {
-                    background-color: black;
-                    color: #00ff00;
-                    border: none;
-                    outline: none;
-                    font-family: monospace;
-                    font-size: 18px;
-                    width: 100%;
-                }
-                button {
-                    background: black;
-                    color: #00ff00;
-                    border: 1px solid #00ff00;
-                    margin-top: 10px;
-                    padding: 5px 10px;
-                    cursor: pointer;
-                }
-                #resposta {
-                    margin-top: 20px;
-                    white-space: pre-wrap;
-                }
-                .sugestoes {
-                    margin-top: 30px;
-                    font-size: 14px;
-                }
-            </style>
-        </head>
-        <body>
+    <head>
+        <title>Thiago AI</title>
+        <style>
+            body {
+                background: linear-gradient(135deg, #e0f2ff, #f8fbff);
+                font-family: Arial, sans-serif;
+                margin: 0;
+            }
 
-            <div>> O que você deseja saber sobre Thiago?</div>
-            <br>
-            <input type="text" id="pergunta" autofocus 
-                onkeydown="if(event.key==='Enter') enviarPergunta()"/>
-            <br>
-            <button onclick="enviarPergunta()">Perguntar</button>
-            <button onclick="novaPergunta()">Nova Pergunta</button>
+            .container {
+                max-width: 850px;
+                margin: 40px auto;
+                padding: 20px;
+            }
 
-            <div id="resposta"></div>
+            h1 {
+                color: #1e3a8a;
+            }
 
-            <div class="sugestoes">
-                <br>> Sugestões de perguntas:
-                <br>- Quantos anos de carreira você tem?
-                <br>- Qual foi seu projeto mais impactante?
-                <br>- Com quais tecnologias você trabalha?
-                <br>- Onde você trabalhou?
-                <br>- Qual seu foco atual?
-                <br>- O que você está estudando atualmente?
-                 <br>- Qual é a sua trajetória profissional?
+            #chat {
+                background: white;
+                border-radius: 16px;
+                padding: 20px;
+                height: 500px;
+                overflow-y: auto;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+                margin-bottom: 15px;
+            }
+
+            .mensagem {
+                margin-bottom: 15px;
+                padding: 12px 16px;
+                border-radius: 14px;
+                max-width: 70%;
+                line-height: 1.5;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+
+            .usuario {
+                background-color: #2563eb;
+                color: white;
+                margin-left: auto;
+            }
+
+            .bot {
+                background-color: #e0e7ff;
+                color: #1e3a8a;
+                margin-right: auto;
+            }
+
+            .input-area {
+                display: flex;
+                gap: 10px;
+            }
+
+            input {
+                flex: 1;
+                padding: 12px;
+                border-radius: 10px;
+                border: 1px solid #cbd5e1;
+                font-size: 16px;
+            }
+
+            button {
+                padding: 12px 18px;
+                border-radius: 10px;
+                border: none;
+                cursor: pointer;
+                font-weight: bold;
+                transition: 0.2s;
+            }
+
+            .btn-enviar {
+                background-color: #2563eb;
+                color: white;
+            }
+
+            .btn-enviar:hover {
+                background-color: #1e40af;
+            }
+
+            .sugestoes {
+                margin-top: 20px;
+            }
+
+            .sugestoes button {
+                background-color: #3b82f6;
+                color: white;
+                margin: 5px 5px 0 0;
+            }
+
+            .sugestoes button:hover {
+                background-color: #1d4ed8;
+            }
+
+            .dots span {
+                animation: blink 1.4s infinite both;
+            }
+
+            .dots span:nth-child(2) {
+                animation-delay: .2s;
+            }
+
+            .dots span:nth-child(3) {
+                animation-delay: .4s;
+            }
+
+            @keyframes blink {
+                0% { opacity: .2; }
+                20% { opacity: 1; }
+                100% { opacity: .2; }
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(5px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Thiago AI</h1>
+            <div id="chat"></div>
+
+            <div class="input-area">
+                <input type="text" id="pergunta" placeholder="Digite sua pergunta..."
+                    onkeydown="if(event.key==='Enter') enviarPergunta()"/>
+                <button class="btn-enviar" onclick="enviarPergunta()">Enviar</button>
             </div>
 
-            <script>
-                async function enviarPergunta() {
-                    const perguntaInput = document.getElementById("pergunta");
-                    const respostaDiv = document.getElementById("resposta");
+            <div class="sugestoes">
+                <br><strong>Sugestões:</strong><br>
+                <button onclick="copiarSugestao(this)">Quais são suas habilidades?</button>
+                <button onclick="copiarSugestao(this)">Qual foi seu projeto mais impactante?</button>
+                <button onclick="copiarSugestao(this)">Conte sua trajetória profissional</button>
+                <button onclick="copiarSugestao(this)">Onde você trabalha atualmente?</button>
+                <button onclick="copiarSugestao(this)">Qual seu foco hoje?</button>
+            </div>
+        </div>
 
-                    const pergunta = perguntaInput.value;
-                    respostaDiv.innerHTML = "";
+<script>
+async function enviarPergunta() {
+    const perguntaInput = document.getElementById("pergunta");
+    const chat = document.getElementById("chat");
+    const pergunta = perguntaInput.value.trim();
+    if (!pergunta) return;
 
-                    const response = await fetch("/perguntar", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ pergunta: pergunta })
-                    });
+    adicionarMensagem(pergunta, "usuario");
+    perguntaInput.value = "";
 
-                    const data = await response.json();
-                    escreverDevagar(data.resposta);
-                }
+    mostrarPensando();
 
-                function escreverDevagar(texto) {
-                    const respostaDiv = document.getElementById("resposta");
-                    let i = 0;
-                    respostaDiv.innerHTML = "";
+    const response = await fetch("/perguntar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pergunta: pergunta })
+    });
 
-                    function digitar() {
-                        if (i < texto.length) {
-                            respostaDiv.innerHTML += texto.charAt(i);
-                            i++;
-                            setTimeout(digitar, 35);
-                        }
-                    }
+    const data = await response.json();
 
-                    digitar();
-                }
+    setTimeout(() => {
+        removerPensando();
+        escreverDevagar(data.resposta);
+    }, 4000);
+}
 
-                function novaPergunta() {
-                    document.getElementById("pergunta").value = "";
-                    document.getElementById("resposta").innerHTML = "";
-                }
-            </script>
+function adicionarMensagem(texto, tipo) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.classList.add("mensagem", tipo);
+    div.innerText = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
 
-        </body>
+function escreverDevagar(texto) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.classList.add("mensagem", "bot");
+    chat.appendChild(div);
+
+    let i = 0;
+
+    function digitar() {
+        if (i < texto.length) {
+            div.innerHTML += texto.charAt(i);
+            i++;
+            chat.scrollTop = chat.scrollHeight;
+            setTimeout(digitar, 45);
+        }
+    }
+
+    digitar();
+}
+
+function mostrarPensando() {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.classList.add("mensagem", "bot");
+    div.id = "pensando";
+
+    div.innerHTML = `
+        <span>Pensando</span>
+        <span class="dots">
+            <span>.</span><span>.</span><span>.</span>
+        </span>
+    `;
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function removerPensando() {
+    const pensando = document.getElementById("pensando");
+    if (pensando) pensando.remove();
+}
+
+function copiarSugestao(botao) {
+    document.getElementById("pergunta").value = botao.innerText;
+    document.getElementById("pergunta").focus();
+}
+</script>
+
+    </body>
     </html>
     """
 
 @app.post("/perguntar")
 def responder(dados: Pergunta):
-    pergunta = dados.pergunta.lower()
+    pergunta = unidecode(dados.pergunta.lower())
+    
+# @app.post("/perguntar")
+# def responder(dados: Pergunta):
+#     return {"resposta": "Teste funcionando perfeitamente"}
 
-    if "anos" in pergunta or "experiência" in pergunta:
-        return {
-            "resposta": f"Thiago possui mais de {perfil['anos_carreira_dados']} anos de experiência sólida na área de dados."
-        }
-
-    if "trajetória" in pergunta or "carreira" in pergunta or "começou" in pergunta:
-        return {
-            "resposta": perfil["trajetória"]
-        }
-
-    if "projeto" in pergunta or "impactante" in pergunta:
-        return {
-            "resposta": f"Um dos projetos mais estratégicos foi: {perfil['projeto_destaque']}."
-        }
-
-    if "tecnologia" in pergunta or "ferramenta" in pergunta or "stack" in pergunta:
-        return {
-            "resposta": f"As principais tecnologias utilizadas são: {perfil['especialidades']}."
-        }
-
-    if "onde" in pergunta or "empresa" in pergunta:
-        return {
-            "resposta": f"Atualmente é {perfil['cargo']} na {perfil['empresa_atual']}. Anteriormente atuou no {perfil['ex_empresa']}."
-        }
-
-    if "cargo" in pergunta:
-        return {
-            "resposta": f"Atua como {perfil['cargo']} com foco em {perfil['area_atual']}."
-        }
-
-    if "atualmente" in pergunta or "foco" in pergunta:
-        return {
-            "resposta": f"Hoje está focado em {perfil['area_atual']} e evolução para projetos com Inteligência Artificial."
-        }
-
-    if "pagbank" in pergunta or "santander" in pergunta or "sulamerica" in pergunta:
-        return {
-            "resposta": perfil["trajetoria"]
-        }
-
-    return {
-        "resposta": "Pergunta não encontrada no banco de dados estratégico de Thiago. Reformule a pergunta."
+    palavras_chave = {
+        "experiencia": ["anos", "experiencia", "tempo de carreira"],
+        "trajetoria": ["trajetoria", "carreira", "comecou", "historia"],
+        "projeto": ["projeto", "impactante", "resultado"],
+        "habilidades": ["habilidades", "especialidades", "tecnologias", "stack", "ferramentas", "competencias"],
+        "empresa": ["empresa", "onde trabalha", "onde atua"],
+        "cargo": ["cargo", "posicao"],
+        "foco": ["foco", "atualmente", "area atual"],
+        "empresas_passadas": ["pagbank", "santander", "sulamerica"]
     }
+
+    def contem(lista):
+        return any(p in pergunta for p in lista)
+
+    if contem(palavras_chave["experiencia"]):
+        return {"resposta": f"Thiago possui mais de {perfil['anos_carreira_dados']} anos de experiência sólida na área de dados."}
+
+    if contem(palavras_chave["trajetoria"]):
+        return {"resposta": perfil["trajetoria"]}
+
+    if contem(palavras_chave["projeto"]):
+        return {"resposta": f"Um dos projetos mais estratégicos foi: {perfil['projeto_destaque']}."}
+
+    if contem(palavras_chave["habilidades"]):
+        return {"resposta": f"As principais habilidades são: {perfil['especialidades']}."}
+
+    if contem(palavras_chave["empresa"]):
+        return {"resposta": f"Atualmente é {perfil['cargo']} na {perfil['empresa_atual']}. Anteriormente atuou no {perfil['ex_empresa']}."}
+
+    if contem(palavras_chave["cargo"]):
+        return {"resposta": f"Atua como {perfil['cargo']} com foco em {perfil['area_atual']}."}
+
+    if contem(palavras_chave["foco"]):
+        return {"resposta": f"Hoje está focado em {perfil['area_atual']} e evoluindo para projetos com Inteligência Artificial."}
+
+    if contem(palavras_chave["empresas_passadas"]):
+        return {"resposta": perfil["trajetoria"]}
+
+    return {"resposta": "Pergunta não encontrada no banco estratégico de Thiago. Reformule a pergunta."}
